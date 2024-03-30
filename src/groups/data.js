@@ -78,7 +78,6 @@ function modifyGroup(group, fields) {
 		group.private = ([null, undefined].includes(group.private)) ? 1 : group.private;
 		group.memberPostCids = group.memberPostCids || '';
 		group.memberPostCidsArray = group.memberPostCids.split(',').map(cid => parseInt(cid, 10)).filter(Boolean);
-
 		group['cover:thumb:url'] = group['cover:thumb:url'] || group['cover:url'];
 
 		if (group['cover:url']) {

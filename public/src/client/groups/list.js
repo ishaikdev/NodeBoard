@@ -1,25 +1,95 @@
 'use strict';
 
 define('forum/groups/list', [
-	'forum/infinitescroll', 'benchpress', 'api', 'bootbox', 'alerts',
-], function (infinitescroll, Benchpress, api, bootbox, alerts) {
+	'forum/infinitescroll', 'benchpress', 'api', 'bootbox', 'alerts', 'translator',
+], function (infinitescroll, Benchpress, api, bootbox, alerts, translator) {
 	const Groups = {};
 
 	Groups.init = function () {
 		infinitescroll.init(Groups.loadMoreGroups);
 
-		// Group creation
-		$('button[data-action="new"]').on('click', function () {
-			bootbox.prompt('[[groups:new-group.group-name]]', function (name) {
-				if (name && name.length) {
-					api.post('/groups', {
-						name: name,
-					}).then((res) => {
-						ajaxify.go('groups/' + res.slug);
-					}).catch(alerts.error);
-				}
+		// Custom Group creation
+		$('button[data-action="new"]').on('click', handleCreate);
+
+		async function handleCreate() {
+			let groups = [];
+			if (app.user.isAdmin) {
+				({ groups } = await api.get('/admin/groups'));
+				groups.sort((a, b) => b.system - a.system).map((g) => {
+					const { name, displayName } = g;
+					return { name, displayName };
+				});
+			}
+			const html = await app.parseAndTranslate('modals/aaacust-create-group', {
+				user: app.user,
+				groups,
 			});
-		});
+
+			const modal = bootbox.dialog({
+				title: '[[groups:new-group]]',
+				message: html,
+				onEscape: true,
+				buttons: {
+					cancel: {
+						label: 'Cancel',
+						className: 'btn-secondary',
+					},
+					save: {
+						label: '[[global:create]]',
+						className: 'btn-primary',
+						callback: function () {
+							const newGroup = {};
+							const groupName = modal.find('[component="group/name"]').val();
+
+							function validateName(name) {
+								return /^[\p{L}0-9!\s-]+$/u.test(name);
+							}
+
+							if (groupName.trim().length === 0 || !validateName(groupName.trim())) {
+								translator.translate('[[groups:custom.groupcreate.errorinvalidname]]', function (translated) {
+									alerts.error(translated);
+								});
+							} else {
+								newGroup.name = groupName.trim();
+							}
+							const groupType1 = modal.find('[component="group/create/public"]').is(':checked');
+							const groupType2 = modal.find('[component="group/create/private"]').is(':checked');
+							const groupType3 = modal.find('[component="group/create/locked"]').is(':checked');
+							const groupType4 = modal.find('[component="group/create/hidden"]').is(':checked');
+							const groupType5 = modal.find('[component="group/create/open"]').is(':checked');
+							const groupDisableJoin = modal.find('[component="group/create/disablejoin"]').is(':checked');
+							if (groupType1) {
+								newGroup.private = 0;
+								newGroup.public = 1;
+							} else if (groupType2) {
+								newGroup.private = 1;
+							} else if (groupType3) {
+								newGroup.private = 1;
+								newGroup.locked = 1;
+							} else if (groupType4) {
+								newGroup.private = 1;
+								newGroup.hidden = 1;
+							} else if (groupType5) {
+								newGroup.private = 0;
+								newGroup.hidden = 0;
+								newGroup.open = 1;
+								newGroup.disableJoinRequests = 1;
+							}
+
+							if (groupDisableJoin) {
+								newGroup.disableJoinRequests = 1;
+							}
+
+							api.post('/groups', newGroup).then((res) => {
+								ajaxify.go('groups/' + res.slug);
+							}).catch(alerts.error);
+							return true;
+						},
+					},
+				},
+			});
+		}
+
 		const params = utils.params();
 		$('#search-sort').val(params.sort || 'alpha');
 

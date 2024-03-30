@@ -20,7 +20,10 @@ module.exports = function () {
 
 	setupApiRoute(router, 'put', '/:slug/membership/:uid', [...middlewares, middleware.assert.group], controllers.write.groups.join);
 	setupApiRoute(router, 'delete', '/:slug/membership/:uid', [...middlewares, middleware.assert.group], controllers.write.groups.leave);
-
+//
+setupApiRoute(router, 'put', '/:slug/moderator/:uid', [...middlewares, middleware.assert.group], controllers.write.groups.grantmod);
+setupApiRoute(router, 'delete', '/:slug/moderator/:uid', [...middlewares, middleware.assert.group], controllers.write.groups.rescindmod);
+//
 	setupApiRoute(router, 'put', '/:slug/ownership/:uid', [...middlewares, middleware.assert.group], controllers.write.groups.grant);
 	setupApiRoute(router, 'delete', '/:slug/ownership/:uid', [...middlewares, middleware.assert.group], controllers.write.groups.rescind);
 

@@ -57,6 +57,26 @@ Groups.rescind = async (req, res) => {
 	helpers.formatApiResponse(200, res);
 };
 
+Groups.grant = async (req, res) => {
+	await api.groups.grant(req, req.params);
+	helpers.formatApiResponse(200, res);
+};
+
+Groups.rescind = async (req, res) => {
+	await api.groups.rescind(req, req.params);
+	helpers.formatApiResponse(200, res);
+};
+//
+Groups.grantmod = async (req, res) => {
+	await api.groups.grantmod(req, req.params);
+	helpers.formatApiResponse(200, res);
+};
+
+Groups.rescindmod = async (req, res) => {
+	await api.groups.rescindmod(req, req.params);
+	helpers.formatApiResponse(200, res);
+};
+//
 Groups.getPending = async (req, res) => {
 	const pending = await api.groups.getPending(req, req.params);
 	helpers.formatApiResponse(200, res, { pending });

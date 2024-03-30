@@ -10,6 +10,8 @@ const meta = require('../meta');
 const notifications = require('../notifications');
 const slugify = require('../slugify');
 
+const plugins = require('../plugins');
+
 const groupsAPI = module.exports;
 
 groupsAPI.list = async (caller, data) => {
@@ -260,6 +262,32 @@ groupsAPI.rescind = async (caller, data) => {
 	await isOwner(caller, groupName);
 
 	await groups.ownership.rescind(data.uid, groupName);
+	logGroupEvent(caller, 'group-owner-rescind', {
+		groupName,
+		targetUid: data.uid,
+	});
+};
+
+groupsAPI.grantmod = async (caller, data) => {
+	const groupName = await groups.getGroupNameByGroupSlug(data.slug);
+	await isOwner(caller, groupName);
+
+	await plugins.hooks.fire('filter:custom.group-catst.grantmoderator', { uid: data.uid, groupName: groupName });
+
+	// await groups.ownership.grant(data.uid, groupName);
+	logGroupEvent(caller, 'group-owner-grant', {
+		groupName: groupName,
+		targetUid: data.uid,
+	});
+};
+
+groupsAPI.rescindmod = async (caller, data) => {
+	const groupName = await groups.getGroupNameByGroupSlug(data.slug);
+	await isOwner(caller, groupName);
+
+	await plugins.hooks.fire('filter:custom.group-catst.rescindmoderator', { uid: data.uid, groupName: groupName });
+
+	// await groups.ownership.rescind(data.uid, groupName);
 	logGroupEvent(caller, 'group-owner-rescind', {
 		groupName,
 		targetUid: data.uid,

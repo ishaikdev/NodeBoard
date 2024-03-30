@@ -6,6 +6,7 @@ define('forum/groups/details', [
 	'components',
 	'coverPhoto',
 	'pictureCropper',
+	'translator',
 	'api',
 	'slugify',
 	'categorySelector',
@@ -18,6 +19,7 @@ define('forum/groups/details', [
 	components,
 	coverPhoto,
 	pictureCropper,
+	translator,
 	api,
 	slugify,
 	categorySelector,
@@ -77,13 +79,41 @@ define('forum/groups/details', [
 			const uid = userRow.attr('data-uid');
 			const action = btnEl.attr('data-action');
 
+			const moderatorFlagEl = userRow.find('[component="groups/moderator/icon"]');
+			const isModerator = !!parseInt(userRow.attr('data-ismoderator'), 10);
+
 			switch (action) {
 				case 'toggleOwnership':
-					api[isOwner ? 'del' : 'put'](`/groups/${ajaxify.data.group.slug}/ownership/${uid}`, {}).then(() => {
-						ownerFlagEl.toggleClass('invisible');
-					}).catch(alerts.error);
+					bootbox.confirm(isOwner ? '[[groups:custom.groupconfirm.removeownership]]' : '[[groups:custom.groupconfirm.grantownership]]', function (confirm) {
+						if (!confirm) {
+							return;
+						}
+						api[isOwner ? 'del' : 'put'](`/groups/${ajaxify.data.group.slug}/ownership/${uid}`, {}).then(() => {
+							if (isOwner) {
+								userRow.attr('data-isowner', '0');
+								ownerFlagEl.toggleClass('hidden');
+							} else {
+								userRow.attr('data-isowner', '1');
+								userRow.attr('data-ismoderator', '1');
+								ownerFlagEl.toggleClass('hidden');
+								moderatorFlagEl.toggleClass('hidden');
+							}
+							// ajaxify.refresh();
+						}).catch(alerts.error);
+					});
 					break;
-
+				case 'toggleModerator':
+					bootbox.confirm(isModerator ? 'admin/manage/users:alerts.confirm-remove-moderator"' : 'admin/manage/admin-mods:add-moderator?', function (confirm) {
+						if (!confirm) {
+							return;
+						}
+						api[isModerator ? 'del' : 'put'](`/groups/${ajaxify.data.group.slug}/moderator/${uid}`, {}).then(() => {
+							isModerator ? userRow.attr('data-ismoderator', '0') : userRow.attr('data-ismoderator', '1');
+							moderatorFlagEl.toggleClass('hidden');
+							// ajaxify.refresh();
+						}).catch(alerts.error);
+					});
+					break;
 				case 'kick':
 					bootbox.confirm('[[groups:details.kick-confirm]]', function (confirm) {
 						if (!confirm) {
@@ -116,9 +146,14 @@ define('forum/groups/details', [
 					break;
 
 				case 'leave':
-					api.del('/groups/' + ajaxify.data.group.slug + '/membership/' + (uid || app.user.uid), undefined).then(
-						() => ajaxify.refresh()
-					).catch(alerts.error);
+					translator.translate('[[groups:membership.leave-group]]', function (translated) {
+						bootbox.confirm(translated, function (confirm) {
+							if (!confirm) {
+								return;
+							}
+							api.del('/groups/' + ajaxify.data.group.slug + '/membership/' + (uid || app.user.uid), undefined).then(() => ajaxify.refresh()).catch(alerts.error);
+						});
+					});
 					break;
 
 				case 'accept':
@@ -244,6 +279,7 @@ define('forum/groups/details', [
 	Details.update = function () {
 		const settingsFormEl = components.get('groups/settings');
 		const checkboxes = settingsFormEl.find('input[type="checkbox"][name]');
+		const radios = settingsFormEl.find('input[type="radio"][id]');
 
 		if (settingsFormEl.length) {
 			const settings = settingsFormEl.serializeObject();
@@ -260,6 +296,49 @@ define('forum/groups/details', [
 					settings[inputEl.attr('name')] = inputEl.prop('checked');
 				}
 			});
+
+			// Fix custom radio values
+			radios.each(function (idx, inputEl) {
+				inputEl = $(inputEl);
+				if (inputEl.length) {
+					settings[inputEl.attr('id')] = inputEl.value;
+				}
+			});
+
+			if (parseInt(settings.selectGroupType, 10) === 1) {
+				settings.private = false;
+				settings.public = true;
+				settings.locked = false;
+				settings.hidden = false;
+				settings.open = false;
+			} else if (parseInt(settings.selectGroupType, 10) === 2) {
+				settings.private = true;
+				settings.public = false;
+				settings.locked = false;
+				settings.hidden = false;
+				settings.open = false;
+			} else if (parseInt(settings.selectGroupType, 10) === 3) {
+				settings.private = true;
+				settings.public = false;
+				settings.locked = true;
+				settings.hidden = false;
+				settings.open = false;
+				settings.disableJoinRequests = true;
+			} else if (parseInt(settings.selectGroupType, 10) === 4) {
+				settings.private = true;
+				settings.hidden = true;
+				settings.public = false;
+				settings.locked = false;
+				settings.open = false;
+				settings.disableJoinRequests = true;
+			} else if (parseInt(settings.selectGroupType, 10) === 5) {
+				settings.private = false;
+				settings.hidden = false;
+				settings.public = false;
+				settings.locked = false;
+				settings.open = true;
+				settings.disableJoinRequests = true;
+			}
 
 			api.put(`/groups/${ajaxify.data.group.slug}`, settings).then(() => {
 				if (settings.name !== ajaxify.data.group.name) {

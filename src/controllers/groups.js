@@ -105,6 +105,7 @@ groupsController.members = async function (req, res, next) {
 	}
 	const users = await user.getUsersFromSet(`group:${groupName}:members`, req.uid, start, stop);
 
+
 	const breadcrumbs = helpers.buildBreadcrumbs([
 		{ text: '[[pages:groups]]', url: '/groups' },
 		{ text: validator.escape(String(groupName)), url: `/groups/${req.params.slug}` },
@@ -112,6 +113,7 @@ groupsController.members = async function (req, res, next) {
 	]);
 
 	const pageCount = Math.max(1, Math.ceil(groupData.memberCount / usersPerPage));
+
 	res.render('groups/members', {
 		users: users,
 		pagination: pagination.create(page, pageCount, req.query),
