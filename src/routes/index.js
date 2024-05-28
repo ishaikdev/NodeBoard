@@ -85,6 +85,15 @@ _mounts.categories = (app, name, middleware, controllers) => {
 _mounts.category = (app, name, middleware, controllers) => {
 	setupPageRoute(app, `/${name}/:category_id/:slug/:topic_index`, [], controllers.category.get);
 	setupPageRoute(app, `/${name}/:category_id/:slug?`, [], controllers.category.get);
+	// , [async function (req, res, next) {
+	// 	console.log(req.url);
+	// 	if (req.url.startsWith('/api') || req !== undefined) {
+	// 		res.status(301).redirect(`../../groups/${req.params.category_id}/${req.params.slug}`);
+	// 	} else {
+	// 		next(req, res);
+	// 	}
+	// }], controllers.category.get);
+	// );
 };
 
 _mounts.users = (app, name, middleware, controllers) => {
@@ -99,6 +108,9 @@ _mounts.groups = (app, name, middleware, controllers) => {
 	setupPageRoute(app, `/${name}`, middlewares, controllers.groups.list);
 	setupPageRoute(app, `/${name}/:slug`, middlewares, controllers.groups.details);
 	setupPageRoute(app, `/${name}/:slug/members`, middlewares, controllers.groups.members);
+	//
+	setupPageRoute(app, `/${name}/:category_id/:slug`, [], controllers.category.get);
+	//
 };
 
 module.exports = async function (app, middleware) {

@@ -31,12 +31,21 @@ module.exports = function (Categories) {
 		const fields = Object.keys(category);
 		// move parent to front, so its updated first
 		const parentCidIndex = fields.indexOf('parentCid');
+// console.log("JSON.stringify(fields data 111)");
+// console.log(JSON.stringify(fields));
 		if (parentCidIndex !== -1 && fields.length > 1) {
 			fields.splice(0, 0, fields.splice(parentCidIndex, 1)[0]);
 		}
+// console.log("JSON.stringify(fields data 222)");
+// console.log(JSON.stringify(fields));
 
 		for (const key of fields) {
-			// eslint-disable-next-line no-await-in-loop
+// console.log("JSON.stringify(key data key)");
+// console.log(JSON.stringify(key));
+// console.log("JSON.stringify(category[key] data )");
+// console.log(JSON.stringify(category[key]));
+
+// eslint-disable-next-line no-await-in-loop
 			await updateCategoryField(cid, key, category[key]);
 		}
 		plugins.hooks.fire('action:category.update', { cid: cid, modified: category });

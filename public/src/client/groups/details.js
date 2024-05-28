@@ -103,7 +103,7 @@ define('forum/groups/details', [
 					});
 					break;
 				case 'toggleModerator':
-					bootbox.confirm(isModerator ? 'admin/manage/users:alerts.confirm-remove-moderator"' : 'admin/manage/admin-mods:add-moderator?', function (confirm) {
+					bootbox.confirm(isModerator ? '[[admin/manage/users:alerts.confirm-remove-moderator]]' : '[[admin/manage/admin-mods:add-moderator]] ?', function (confirm) {
 						if (!confirm) {
 							return;
 						}
